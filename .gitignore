@@ -328,3 +328,8 @@ ASALocalRun/
 
 # MFractors (Xamarin productivity tool) working folder 
 .mfractor/
+
+# elm-package generated files
+elm-stuff
+# elm-repl generated files
+repl-temp-*
