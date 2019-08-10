@@ -35,6 +35,7 @@ namespace MultiplayerSudoku.Host
                 app.UseDeveloperExceptionPage();
             }
 
+            app.UseCors(builder => builder.AllowAnyOrigin());
             app.UseMvc();
             app.UseWebSockets();
         }

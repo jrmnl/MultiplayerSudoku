@@ -4,11 +4,24 @@ import Array exposing (..)
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onInput, onClick)
+import Http
+import Json.Decode exposing (Decoder, keyValuePairs, int)
+
+-- MAIN
+
 
 main =
-  Browser.sandbox { init = init, update = update, view = view }
+  Browser.element
+    { init = init
+    , update = update
+    , subscriptions = subscriptions
+    , view = view
+    }
+
 
 -- MODEL
+
+
 
 type alias Model =
   { username:String, page:Page}
@@ -18,48 +31,70 @@ type Page
   | Loading
   | Game Board
   | Leaderboard (List (String, Int))
+  | ErrorPage String
 
 type alias Board = Array (Array (Maybe Int))
   
-init = { username = "", page = SelectName }
+init : () -> (Model, Cmd Msg)
+init _ =
+  ( { username = "", page = SelectName }
+  , Cmd.none
+  )
+
 
 -- UPDATE
+
+
 
 type Msg
   = ChangeName String
   | StartGame
   | UpdateCell Int Int String
   | ViewLeaderboard
-  
+  | GotLeaderboard (Result Http.Error (List (String, Int)))
+
 update msg model =
   case msg of
     ChangeName newName ->
-      { username = newName, page = SelectName } 
+      ( { username = newName, page = SelectName } , Cmd.none)
 
     UpdateCell rowIndex columnIndex newValue ->
       case model.page of
         Game board ->
-          { model | page =
-            board
-            |> Array.set rowIndex (
-              board
-              |> Array.get rowIndex
-              |> Maybe.map (Array.set columnIndex (toValidSymbol newValue))
-              |> Maybe.withDefault Array.empty)
-            |> Game
-          }
-        _ -> { model | username = "wtf" }
+          ( { model | page = board |> updateBoard rowIndex columnIndex newValue |> Game }
+          , Cmd.none
+          )
+        _ ->
+          (model, Cmd.none)
 
     StartGame ->
-      { model | page =
-        [ Nothing, Just 1, Just 23, Nothing, Nothing, Just 33, Nothing, Nothing, Just 32 ]
-        |> Array.fromList
-        |> Array.repeat 9
-        |> Game
-      }
+      ( { model | page = initGame |> Game }
+      , Cmd.none
+      )
     
     ViewLeaderboard ->
-      { model | page = Leaderboard [("Qwerty", 0)] }
+      ({ model | page = Loading } , getLeaderboard)
+      
+    GotLeaderboard result ->
+      case result of
+        Ok leaders ->
+          ( { model | page = Leaderboard leaders }, Cmd.none)
+        Err httpError ->
+          ( { model | page = httpError |> toErrorString |> ErrorPage } , Cmd.none)
+  
+updateBoard rowIndex columnIndex newValue board =
+  board
+  |> Array.set rowIndex (
+    board
+    |> Array.get rowIndex
+    |> Maybe.map (Array.set columnIndex (toValidSymbol newValue))
+    |> Maybe.withDefault Array.empty
+    )
+
+initGame =
+  [ Nothing, Just 1, Just 23, Nothing, Nothing, Just 33, Nothing, Nothing, Just 32 ]
+  |> Array.fromList
+  |> Array.repeat 9
       
 toValidSymbol str =
   str
@@ -68,24 +103,35 @@ toValidSymbol str =
     if n < 1 || n > 9 then
       Nothing
     else Just n)
-
-
-updateListAt i x list  =
-  list |> mapListAt i (\elem -> elem) 
     
-mapListAt i map list =
-  case list of
-    [] -> []
-    head::tail -> 
-      if i == 0 then
-        (map head) :: tail
-      else
-        head :: (mapListAt (i - 1) map tail)
+toErrorString httpError =
+  case httpError of
+    Http.BadUrl str -> "Bad url: " ++ str
+    Http.Timeout -> "Timeout"
+    Http.NetworkError -> "Network error"
+    Http.BadStatus code -> "Status code: " ++ String.fromInt code
+    Http.BadBody str -> "Bad Body: " ++ str
+
+
+-- SUBSCRIPTIONS
+
+
+subscriptions model =
+  Sub.none
+
 
 -- VIEW
 
+
+
 view model =
   case model.page of
+    ErrorPage error ->
+      div []
+        [ div [] [ text error ]
+        , button [ onClick (ChangeName model.username) ] [ text "Back" ]
+        ]
+
     SelectName -> 
       viewGreetings model.username
 
@@ -98,12 +144,17 @@ view model =
         , button [ onClick (ChangeName model.username) ] [ text "Back" ]
         ]
       
-    Leaderboard leaderboard ->
+    Leaderboard leaders ->
       div []
-        [ div [] (List.map (\(u,a) -> div [] [text u]) leaderboard)
+        [ div [] (drawLeaderboard leaders)
         , button [ onClick (ChangeName model.username) ] [ text "Back" ]
         ]
       
+drawLeaderboard leaders =
+  leaders
+  |> List.sortBy (\(_,wins) -> wins)
+  |> List.map (\(name,wins) -> [text (name ++ " " ++ (String.fromInt wins))])
+  |> List.map (div [])
 
 drawSudokuRaw index cells =
   tr [] (cells |> Array.toList |> List.indexedMap (drawSudokuCell index))
@@ -131,3 +182,18 @@ viewGreetings username =
     , button [ hidden (username == ""), onClick StartGame ] [ text "Join game" ]
     , button [ onClick ViewLeaderboard ] [ text "Leaderboard" ]
     ]
+
+
+-- HTTP
+
+
+getLeaderboard : Cmd Msg
+getLeaderboard =
+  Http.get
+    { url = "http://localhost:8001/api/leaderboard"
+    , expect = Http.expectJson GotLeaderboard leaderboardDecoder
+    }
+
+leaderboardDecoder : Decoder (List (String, Int))
+leaderboardDecoder =
+  keyValuePairs int
