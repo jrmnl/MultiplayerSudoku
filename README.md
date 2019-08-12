@@ -2,8 +2,8 @@
 
 It's multiplayer sudoku game. Rules are the same but wins who faster.
 
-Frontend: Elm
-Backend: C#, .NET Core
+- Frontend: Elm
+- Backend: C#, .NET Core
 
 # How to run
 
