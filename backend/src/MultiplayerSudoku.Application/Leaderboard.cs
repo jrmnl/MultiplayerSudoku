@@ -1,10 +1,11 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using MultiplayerSudoku.Application.Contract;
 
-namespace MultiplayerSudoku.Host
+namespace MultiplayerSudoku.Application
 {
-    public class Leaderboard
+    public class Leaderboard : ILeaderboardService
     {
         private readonly ConcurrentDictionary<string, int> _leaders;
 

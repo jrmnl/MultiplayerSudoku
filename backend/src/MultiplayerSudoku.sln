@@ -9,6 +9,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MultiplayerSudoku.Host", "M
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MultiplayerSudoku.Logic.Tests", "MultiplayerSudoku.Logic.Tests\MultiplayerSudoku.Logic.Tests.csproj", "{CCF1AB5A-33CF-4FB0-AB9E-2B320CE2E228}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MultiplayerSudoku.Application", "MultiplayerSudoku.Application\MultiplayerSudoku.Application.csproj", "{39DA03F0-50F7-4EC0-850B-BBB7C3FDDDE5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MultiplayerSudoku.Application.Contract", "MultiplayerSudoku.Application.Contract\MultiplayerSudoku.Application.Contract.csproj", "{40A751DD-B08E-4788-8C86-CDD45726C4C8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +31,14 @@ Global
 		{CCF1AB5A-33CF-4FB0-AB9E-2B320CE2E228}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CCF1AB5A-33CF-4FB0-AB9E-2B320CE2E228}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CCF1AB5A-33CF-4FB0-AB9E-2B320CE2E228}.Release|Any CPU.Build.0 = Release|Any CPU
+		{39DA03F0-50F7-4EC0-850B-BBB7C3FDDDE5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{39DA03F0-50F7-4EC0-850B-BBB7C3FDDDE5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{39DA03F0-50F7-4EC0-850B-BBB7C3FDDDE5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{39DA03F0-50F7-4EC0-850B-BBB7C3FDDDE5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{40A751DD-B08E-4788-8C86-CDD45726C4C8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{40A751DD-B08E-4788-8C86-CDD45726C4C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{40A751DD-B08E-4788-8C86-CDD45726C4C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{40A751DD-B08E-4788-8C86-CDD45726C4C8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

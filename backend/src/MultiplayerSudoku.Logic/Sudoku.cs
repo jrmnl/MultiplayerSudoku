@@ -4,57 +4,6 @@ using System.Linq;
 
 namespace MultiplayerSudoku.Logic
 {
-    public class SudokuBoard
-    {
-        private readonly int?[,] _board;
-
-        public SudokuBoard(int maxMissingCellsInRow)
-        {
-            if (maxMissingCellsInRow < 0)
-                throw new ArgumentOutOfRangeException(nameof(maxMissingCellsInRow));
-
-            _board = Sudoku.Puzzle(Sudoku.GenerateBoard(), maxMissingCellsInRow);
-            UpdateStatus();
-        }
-
-        public GameStatus Status { get; private set; }
-
-        public int?[,] CurrentState => _board.Copy();
-
-        public bool TryUpdateAt(int row, int column, int value)
-        {
-            if (Sudoku.TryUpdateElement(_board, row, column, value))
-            {
-                UpdateStatus();
-                return true;
-            }
-            else return false;
-        }
-
-        private void UpdateStatus()
-        {
-            if (Sudoku.IsCorrect(_board))
-            {
-                Status = GameStatus.Correct;
-            }
-            else if (Sudoku.HasInputVariants(_board))
-            {
-                Status = GameStatus.InProgress;
-            }
-            else
-            {
-                Status = GameStatus.Broken;
-            }
-        }
-
-        public enum GameStatus
-        {
-            InProgress,
-            Broken,
-            Correct
-        }
-    }
-
     public static class Sudoku
     {
         private static HashSet<int> AllowedSymbols { get; } = new HashSet<int>(Enumerable.Range(1, 9));
@@ -76,17 +25,16 @@ namespace MultiplayerSudoku.Logic
             return board;
         }
 
-        public static int?[,] Puzzle(int[,] board, int maxRowMissingElements)
+        public static int?[,] Puzzle(int[,] board, int rowMissingElements)
         {
             var rnd = new Random();
             var puzzled = new int?[board.GetLength(0), board.GetLength(1)];
             for (int row = 0; row < board.GetLength(0); row++)
             {
-                var hideCount = rnd.Next(0, maxRowMissingElements);
                 var hiddenElements = board.GetRow(row)
                     .ToArray()
                     .Shuffle(rnd)
-                    .Take(hideCount);
+                    .Take(rowMissingElements);
                 for (int col = 0; col < board.GetLength(1); col++)
                 {
                     var boardElement = board[row, col];

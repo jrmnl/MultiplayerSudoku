@@ -3,7 +3,7 @@ module Main exposing (main)
 import WebSocket
 import Browser
 import Array exposing (Array)
-import Html exposing (Html, div, input, text, button, table, tr, td)
+import Html exposing (Html, div, input, text, button, table, tr, td, h1)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onInput, onClick)
 import Http
@@ -34,6 +34,7 @@ type Page
   = SelectName
   | Loading
   | Game Board
+  | Winner (Maybe String)
   | Leaderboard (List (String, Int))
   | ErrorPage String
 
@@ -52,9 +53,10 @@ init _ =
 type GameUpdate
   = NewState Board
   | NewUpdate Int Int Int
-  | WrongUpdate Int Int Int
   | EndOfGame (Maybe String)
   | Error String
+  | ConnectionLost
+  | NameConflict String
 
 type Msg
   = ChangeName String
@@ -67,43 +69,65 @@ type Msg
 update msg model =
   case msg of
     ChangeName newName ->
-      ( { username = newName, page = SelectName } , Cmd.none)
+      ( { username = newName, page = SelectName }
+      , Cmd.none)
 
     UpdateCell row col val ->
       case String.toInt val of
         Just strVal ->
-          (model, sendNewUpdate model.username row col strVal)
+          ( model
+          , updateCmd model.username row col strVal)
         Nothing ->
-          (model, Cmd.none)
+          ( model, Cmd.none)
 
     StartGame ->
-      ( { model | page = initGame |> Game }, Cmd.none)
+      ( { model | page = Loading }
+      , connectCmd model.username)
     
     ViewLeaderboard ->
-      ({ model | page = Loading } , getLeaderboard)
+      ( { model | page = Loading }
+      , getLeaderboard)
       
     GotLeaderboard result ->
       case result of
         Ok leaders ->
-          ( { model | page = Leaderboard leaders }, Cmd.none)
+          ( { model | page = Leaderboard leaders }
+          , Cmd.none)
         Err httpError ->
-          ( { model | page = httpError |> toErrorString |> ErrorPage } , Cmd.none)
+          ( { model | page = httpError |> toErrorString |> ErrorPage }
+          , Cmd.none)
 
-    GameUpdate _ -> (model, Cmd.none)
+    GameUpdate updateMsg -> 
+      case (updateMsg, model.page) of
+        (NewState board, Loading) ->
+          ( {model | page = Game board}
+          , Cmd.none)
+        (NewUpdate row col newVal, Game board) ->
+          ( {model | page = board |> updateBoard row col newVal |> Game }
+          , Cmd.none)
+        (EndOfGame winner, Game board) ->
+          ( {model | page = Winner winner}
+          , Cmd.none)
+        (Error error, _) ->
+          ( {model | page = ErrorPage error}
+          , Cmd.none)
+        (ConnectionLost, Game _) ->
+          ( {model | page = ErrorPage "Connection lost"}
+          , Cmd.none)
+        (NameConflict name, Loading) ->
+          ( {model | page = ErrorPage ("Name: '" ++ name  ++"' already in use")}
+          , Cmd.none)
+        _ ->
+          (model, Cmd.none)
   
 updateBoard rowIndex columnIndex newValue board =
   board
   |> Array.set rowIndex (
     board
     |> Array.get rowIndex
-    |> Maybe.map (Array.set columnIndex (toValidSymbol newValue))
+    |> Maybe.map (Array.set columnIndex (Just newValue))
     |> Maybe.withDefault Array.empty
     )
-
-initGame =
-  [ Nothing, Just 1, Just 23, Nothing, Nothing, Just 33, Nothing, Nothing, Just 32 ]
-  |> Array.fromList
-  |> Array.repeat 9
       
 toValidSymbol str =
   str
@@ -123,8 +147,13 @@ toErrorString httpError =
 
 -- COMMANDS
 
-sendNewUpdate username row col val =
+updateCmd username row col val =
   encodeUpdate username row col val
+  |> Encode.encode 0
+  |> WebSocket.send 
+
+connectCmd username =
+  encodeConnect username
   |> Encode.encode 0
   |> WebSocket.send 
 
@@ -146,6 +175,13 @@ subscriptions model =
 
 view model =
   case model.page of
+    Winner winner -> 
+      div [] 
+        [ drawWinner winner
+        , button [ onClick StartGame ] [ text "New game" ]
+        , button [ onClick ViewLeaderboard ] [ text "Leaders" ]
+        ]
+
     ErrorPage error ->
       div []
         [ div [] [ text error ]
@@ -159,10 +195,7 @@ view model =
       div [] [ text "Loading.." ]
 
     Game board ->
-      div []
-        [ table [] (board |> Array.toList |> List.indexedMap drawSudokuRaw)
-        , button [ onClick (ChangeName model.username) ] [ text "Back" ]
-        ]
+      div [] [ table [] (board |> Array.toList |> List.indexedMap drawSudokuRaw) ]
       
     Leaderboard leaders ->
       div []
@@ -170,6 +203,13 @@ view model =
         , button [ onClick (ChangeName model.username) ] [ text "Back" ]
         ]
       
+drawWinner winner =
+  case winner of
+    Just someWinner ->
+      text (someWinner ++ " wins!")
+    Nothing->
+      text "No one wins! Impossible to continue game"
+
 drawLeaderboard leaders =
   leaders
   |> List.sortBy (\(_,wins) -> wins)
@@ -217,10 +257,17 @@ getLeaderboard =
 
 -- JSON ENCODE
 
+encodeConnect username =
+  Encode.object
+    [ ( "type", Encode.string "connect")
+    , ( "username", Encode.string username)
+    ]
+
 encodeUpdate username row col val =
   Encode.object
-    [ ( "username", Encode.string username )
-    , ( "row", Encode.int row )
+    [ ( "type", Encode.string "update")
+    , ( "username", Encode.string username)
+    , ( "row", Encode.int row)
     , ( "column", Encode.int col)
     , ( "value", Encode.int val)
     ]
@@ -244,14 +291,14 @@ gameUpdateDecoder =
           (Decode.field "row" Decode.int)
           (Decode.field "column" Decode.int)
           (Decode.field "value" Decode.int)
-      "wrong" ->
-        Decode.map3 WrongUpdate
-          (Decode.field "row" Decode.int)
-          (Decode.field "column" Decode.int)
-          (Decode.field "value" Decode.int)
       "end" -> 
         Decode.map EndOfGame
           (Decode.field "winner" (Decode.maybe Decode.string))
+      "disconnected" -> 
+        Decode.succeed ConnectionLost
+      "nameconflict" -> 
+        Decode.map NameConflict
+          (Decode.field "name" Decode.string)
       _ ->
         Decode.map Error Decode.string
   )

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
+using MultiplayerSudoku.Application.Contract;
 
 namespace MultiplayerSudoku.Host.Controllers
 {
@@ -8,9 +9,9 @@ namespace MultiplayerSudoku.Host.Controllers
     [ApiController]
     public class LeaderboardController : ControllerBase
     {
-        private readonly Leaderboard _leaderboard;
+        private readonly ILeaderboardService _leaderboard;
 
-        public LeaderboardController(Leaderboard leaderboard)
+        public LeaderboardController(ILeaderboardService leaderboard)
         {
             _leaderboard = leaderboard ?? throw new ArgumentNullException(nameof(leaderboard));
         }

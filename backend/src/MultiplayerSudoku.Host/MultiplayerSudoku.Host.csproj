@@ -10,12 +10,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="JsonSubTypes" Version="1.6.0" />
     <PackageReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="Microsoft.AspNetCore.Server.HttpSys" Version="2.2.6" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\MultiplayerSudoku.Application.Contract\MultiplayerSudoku.Application.Contract.csproj" />
+    <ProjectReference Include="..\MultiplayerSudoku.Application\MultiplayerSudoku.Application.csproj" />
     <ProjectReference Include="..\MultiplayerSudoku.Logic\MultiplayerSudoku.Logic.csproj" />
   </ItemGroup>
   

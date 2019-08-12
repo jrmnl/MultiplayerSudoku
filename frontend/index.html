@@ -1,4 +1,4 @@
-<!DOCTYPE HTML>
+﻿<!DOCTYPE HTML>
 <html>
 <head>
   <meta charset="UTF-8">
@@ -12,43 +12,66 @@
   var app = Elm.Main.init({
     node: document.getElementById('elm')
   });
-  
-  // step 1: hook up outgoing port
-  var ws = {}
+
+  var ws = null;
   app.ports.send.subscribe(function(msg) {
 	try {
+	  if(ws == null) {
+		console.log('[js] try open', msg);
+		connectWebSocket(app, 'ws://localhost:8001/sudoku/ws');
+		waitForSocketConnection(ws, function(){
+			console.log("message sent!!!");
+			ws.send(msg);
+		});
+	  } else {
+	  
 	  console.log('[js] send', msg);
-	  ws.conn.send(msg);
+	  ws.send(msg);
+	  }
 	} catch (e) {
-	  console.log('[js] send fail', e); // e.g. ws.conn not established
+	  console.log('[js] send fail', e);
 	}
   });
+  
+function waitForSocketConnection(socket, callback){
+    setTimeout(
+        function () {
+            if (socket.readyState === 1) {
+                console.log("Connection is made")
+                if (callback != null){
+                    callback();
+                }
+            } else {
+                console.log("wait for connection...")
+                waitForSocketConnection(socket, callback);
+            }
+
+        }, 5); // wait 5 milisecond for the connection...
+}
   function connectWebSocket(app, wsUrl, optionalProtocol) {
-	ws.conn = new WebSocket(wsUrl, optionalProtocol);
-	ws.conn.onopen = function (event) {
+	ws = new WebSocket(wsUrl, optionalProtocol);
+	ws.onopen = function (event) {
 		console.log('[js] connected', event);
 	};
-	ws.conn.onmessage = function (event) {
+	ws.onmessage = function (event) {
 		console.log('[js] message', event);
 		app.ports.recieve.send(event.data);
 	};
-	ws.conn.onerror = function (event) {
+	ws.onerror = function (event) {
 		console.log('[js] error', event);
 	};
-	ws.conn.onclose = function (event) {
+	ws.onclose = function (event) {
 		console.log('[js] close', event);
-		ws.conn.onclose = null;
-		ws.conn = null;
-		//setTimeout(function() {
-		//  connectWebSocket(app, wsUrl, optionalProtocol);
-		//}, 1000);
+		ws.onclose = null;
+		ws = null;
+		if (!event.wasClean) {
+		  let a = {};
+		  a.type ='disconnected';
+		  app.ports.recieve.send(JSON.stringify(a));
+		}
 	};
   }
-  // step 2: hook up incoming port
-  // e.g.
-  connectWebSocket(app, 'ws://localhost:8001/api/sudoku/start');
-  // or if we're doing https://github.com/graph-gophers/graphql-transport-ws
-  // connectWebSocket(app, 'ws://localhost:5000/graphql', 'graphql-ws');
+  
   </script>
 </body>
 </html>
