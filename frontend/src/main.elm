@@ -38,7 +38,7 @@ type Page
   | Leaderboard (List (String, Int))
   | ErrorPage String
 
-type alias Board = Array (Array (Maybe Int))
+type alias Board = List (List (Maybe Int))
   
 init : () -> (Model, Cmd Msg)
 init _ =
@@ -52,7 +52,6 @@ init _ =
 
 type GameUpdate
   = NewState Board
-  | NewUpdate Int Int Int
   | EndOfGame (Maybe String)
   | Error String
   | ConnectionLost
@@ -76,7 +75,7 @@ update msg model =
       case String.toInt val of
         Just strVal ->
           ( model
-          , updateCmd model.username row col strVal)
+          , updateCmd row col strVal)
         Nothing ->
           ( model, Cmd.none)
 
@@ -102,8 +101,8 @@ update msg model =
         (NewState board, Loading) ->
           ( {model | page = Game board}
           , Cmd.none)
-        (NewUpdate row col newVal, Game board) ->
-          ( {model | page = board |> updateBoard row col newVal |> Game }
+        (NewState board, Game _) ->
+          ( {model | page = Game board}
           , Cmd.none)
         (EndOfGame winner, Game board) ->
           ( {model | page = Winner winner}
@@ -119,15 +118,6 @@ update msg model =
           , Cmd.none)
         _ ->
           (model, Cmd.none)
-  
-updateBoard rowIndex columnIndex newValue board =
-  board
-  |> Array.set rowIndex (
-    board
-    |> Array.get rowIndex
-    |> Maybe.map (Array.set columnIndex (Just newValue))
-    |> Maybe.withDefault Array.empty
-    )
       
 toValidSymbol str =
   str
@@ -147,8 +137,8 @@ toErrorString httpError =
 
 -- COMMANDS
 
-updateCmd username row col val =
-  encodeUpdate username row col val
+updateCmd row col val =
+  encodeUpdate row col val
   |> Encode.encode 0
   |> WebSocket.send 
 
@@ -195,7 +185,7 @@ view model =
       div [] [ text "Loading.." ]
 
     Game board ->
-      div [] [ table [] (board |> Array.toList |> List.indexedMap drawSudokuRaw) ]
+      div [] [ table [] (board |> List.indexedMap drawSudokuRaw) ]
       
     Leaderboard leaders ->
       div []
@@ -217,7 +207,7 @@ drawLeaderboard leaders =
   |> List.map (div [])
 
 drawSudokuRaw index cells =
-  tr [] (cells |> Array.toList |> List.indexedMap (drawSudokuCell index))
+  tr [] (cells |> List.indexedMap (drawSudokuCell index))
 
 drawSudokuCell rowIndex colIndex cell =
   td [] [div [style "width" "40px", style "height" "40px"] [drawCellContent rowIndex colIndex cell] ]
@@ -263,10 +253,9 @@ encodeConnect username =
     , ( "username", Encode.string username)
     ]
 
-encodeUpdate username row col val =
+encodeUpdate row col val =
   Encode.object
     [ ( "type", Encode.string "update")
-    , ( "username", Encode.string username)
     , ( "row", Encode.int row)
     , ( "column", Encode.int col)
     , ( "value", Encode.int val)
@@ -285,12 +274,7 @@ gameUpdateDecoder =
     case str of
       "state" ->
         Decode.map NewState
-          (Decode.field "sudokuBoard" (Decode.array (Decode.array (Decode.maybe Decode.int))))
-      "new" ->
-        Decode.map3 NewUpdate
-          (Decode.field "row" Decode.int)
-          (Decode.field "column" Decode.int)
-          (Decode.field "value" Decode.int)
+          (Decode.field "sudokuBoard" (Decode.list (Decode.list (Decode.maybe Decode.int))))
       "end" -> 
         Decode.map EndOfGame
           (Decode.field "winner" (Decode.maybe Decode.string))

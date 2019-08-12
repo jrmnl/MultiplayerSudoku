@@ -2489,43 +2489,6 @@ function _Http_track(router, xhr, tracker)
 }
 
 
-var _Bitwise_and = F2(function(a, b)
-{
-	return a & b;
-});
-
-var _Bitwise_or = F2(function(a, b)
-{
-	return a | b;
-});
-
-var _Bitwise_xor = F2(function(a, b)
-{
-	return a ^ b;
-});
-
-function _Bitwise_complement(a)
-{
-	return ~a;
-};
-
-var _Bitwise_shiftLeftBy = F2(function(offset, a)
-{
-	return a << offset;
-});
-
-var _Bitwise_shiftRightBy = F2(function(offset, a)
-{
-	return a >> offset;
-});
-
-var _Bitwise_shiftRightZfBy = F2(function(offset, a)
-{
-	return a >>> offset;
-});
-
-
-
 
 // HELPERS
 
@@ -5021,16 +4984,11 @@ var author$project$Main$NameConflict = function (a) {
 var author$project$Main$NewState = function (a) {
 	return {$: 'NewState', a: a};
 };
-var author$project$Main$NewUpdate = F3(
-	function (a, b, c) {
-		return {$: 'NewUpdate', a: a, b: b, c: c};
-	});
 var elm$json$Json$Decode$andThen = _Json_andThen;
-var elm$json$Json$Decode$array = _Json_decodeArray;
 var elm$json$Json$Decode$field = _Json_decodeField;
 var elm$json$Json$Decode$int = _Json_decodeInt;
+var elm$json$Json$Decode$list = _Json_decodeList;
 var elm$json$Json$Decode$map = _Json_map1;
-var elm$json$Json$Decode$map3 = _Json_map3;
 var elm$json$Json$Decode$oneOf = _Json_oneOf;
 var elm$json$Json$Decode$succeed = _Json_succeed;
 var elm$json$Json$Decode$maybe = function (decoder) {
@@ -5053,16 +5011,9 @@ var author$project$Main$gameUpdateDecoder = A2(
 					A2(
 						elm$json$Json$Decode$field,
 						'sudokuBoard',
-						elm$json$Json$Decode$array(
-							elm$json$Json$Decode$array(
+						elm$json$Json$Decode$list(
+							elm$json$Json$Decode$list(
 								elm$json$Json$Decode$maybe(elm$json$Json$Decode$int)))));
-			case 'new':
-				return A4(
-					elm$json$Json$Decode$map3,
-					author$project$Main$NewUpdate,
-					A2(elm$json$Json$Decode$field, 'row', elm$json$Json$Decode$int),
-					A2(elm$json$Json$Decode$field, 'column', elm$json$Json$Decode$int),
-					A2(elm$json$Json$Decode$field, 'value', elm$json$Json$Decode$int));
 			case 'end':
 				return A2(
 					elm$json$Json$Decode$map,
@@ -6061,139 +6012,15 @@ var author$project$Main$toErrorString = function (httpError) {
 			return 'Bad Body: ' + str;
 	}
 };
-var elm$core$Bitwise$shiftRightZfBy = _Bitwise_shiftRightZfBy;
-var elm$core$Array$bitMask = 4294967295 >>> (32 - elm$core$Array$shiftStep);
-var elm$core$Bitwise$and = _Bitwise_and;
-var elm$core$Elm$JsArray$unsafeGet = _JsArray_unsafeGet;
-var elm$core$Array$getHelp = F3(
-	function (shift, index, tree) {
-		getHelp:
-		while (true) {
-			var pos = elm$core$Array$bitMask & (index >>> shift);
-			var _n0 = A2(elm$core$Elm$JsArray$unsafeGet, pos, tree);
-			if (_n0.$ === 'SubTree') {
-				var subTree = _n0.a;
-				var $temp$shift = shift - elm$core$Array$shiftStep,
-					$temp$index = index,
-					$temp$tree = subTree;
-				shift = $temp$shift;
-				index = $temp$index;
-				tree = $temp$tree;
-				continue getHelp;
-			} else {
-				var values = _n0.a;
-				return A2(elm$core$Elm$JsArray$unsafeGet, elm$core$Array$bitMask & index, values);
-			}
-		}
-	});
-var elm$core$Bitwise$shiftLeftBy = _Bitwise_shiftLeftBy;
-var elm$core$Array$tailIndex = function (len) {
-	return (len >>> 5) << 5;
-};
-var elm$core$Basics$ge = _Utils_ge;
-var elm$core$Array$get = F2(
-	function (index, _n0) {
-		var len = _n0.a;
-		var startShift = _n0.b;
-		var tree = _n0.c;
-		var tail = _n0.d;
-		return ((index < 0) || (_Utils_cmp(index, len) > -1)) ? elm$core$Maybe$Nothing : ((_Utils_cmp(
-			index,
-			elm$core$Array$tailIndex(len)) > -1) ? elm$core$Maybe$Just(
-			A2(elm$core$Elm$JsArray$unsafeGet, elm$core$Array$bitMask & index, tail)) : elm$core$Maybe$Just(
-			A3(elm$core$Array$getHelp, startShift, index, tree)));
-	});
-var elm$core$Elm$JsArray$unsafeSet = _JsArray_unsafeSet;
-var elm$core$Array$setHelp = F4(
-	function (shift, index, value, tree) {
-		var pos = elm$core$Array$bitMask & (index >>> shift);
-		var _n0 = A2(elm$core$Elm$JsArray$unsafeGet, pos, tree);
-		if (_n0.$ === 'SubTree') {
-			var subTree = _n0.a;
-			var newSub = A4(elm$core$Array$setHelp, shift - elm$core$Array$shiftStep, index, value, subTree);
-			return A3(
-				elm$core$Elm$JsArray$unsafeSet,
-				pos,
-				elm$core$Array$SubTree(newSub),
-				tree);
-		} else {
-			var values = _n0.a;
-			var newLeaf = A3(elm$core$Elm$JsArray$unsafeSet, elm$core$Array$bitMask & index, value, values);
-			return A3(
-				elm$core$Elm$JsArray$unsafeSet,
-				pos,
-				elm$core$Array$Leaf(newLeaf),
-				tree);
-		}
-	});
-var elm$core$Array$set = F3(
-	function (index, value, array) {
-		var len = array.a;
-		var startShift = array.b;
-		var tree = array.c;
-		var tail = array.d;
-		return ((index < 0) || (_Utils_cmp(index, len) > -1)) ? array : ((_Utils_cmp(
-			index,
-			elm$core$Array$tailIndex(len)) > -1) ? A4(
-			elm$core$Array$Array_elm_builtin,
-			len,
-			startShift,
-			tree,
-			A3(elm$core$Elm$JsArray$unsafeSet, elm$core$Array$bitMask & index, value, tail)) : A4(
-			elm$core$Array$Array_elm_builtin,
-			len,
-			startShift,
-			A4(elm$core$Array$setHelp, startShift, index, value, tree),
-			tail));
-	});
-var elm$core$Maybe$map = F2(
-	function (f, maybe) {
-		if (maybe.$ === 'Just') {
-			var value = maybe.a;
-			return elm$core$Maybe$Just(
-				f(value));
-		} else {
-			return elm$core$Maybe$Nothing;
-		}
-	});
-var elm$core$Maybe$withDefault = F2(
-	function (_default, maybe) {
-		if (maybe.$ === 'Just') {
-			var value = maybe.a;
-			return value;
-		} else {
-			return _default;
-		}
-	});
-var author$project$Main$updateBoard = F4(
-	function (rowIndex, columnIndex, newValue, board) {
-		return A3(
-			elm$core$Array$set,
-			rowIndex,
-			A2(
-				elm$core$Maybe$withDefault,
-				elm$core$Array$empty,
-				A2(
-					elm$core$Maybe$map,
-					A2(
-						elm$core$Array$set,
-						columnIndex,
-						elm$core$Maybe$Just(newValue)),
-					A2(elm$core$Array$get, rowIndex, board))),
-			board);
-	});
 var elm$json$Json$Encode$int = _Json_wrap;
-var author$project$Main$encodeUpdate = F4(
-	function (username, row, col, val) {
+var author$project$Main$encodeUpdate = F3(
+	function (row, col, val) {
 		return elm$json$Json$Encode$object(
 			_List_fromArray(
 				[
 					_Utils_Tuple2(
 					'type',
 					elm$json$Json$Encode$string('update')),
-					_Utils_Tuple2(
-					'username',
-					elm$json$Json$Encode$string(username)),
 					_Utils_Tuple2(
 					'row',
 					elm$json$Json$Encode$int(row)),
@@ -6205,13 +6032,13 @@ var author$project$Main$encodeUpdate = F4(
 					elm$json$Json$Encode$int(val))
 				]));
 	});
-var author$project$Main$updateCmd = F4(
-	function (username, row, col, val) {
+var author$project$Main$updateCmd = F3(
+	function (row, col, val) {
 		return author$project$WebSocket$send(
 			A2(
 				elm$json$Json$Encode$encode,
 				0,
-				A4(author$project$Main$encodeUpdate, username, row, col, val)));
+				A3(author$project$Main$encodeUpdate, row, col, val)));
 	});
 var elm$core$String$toInt = _String_toInt;
 var author$project$Main$update = F2(
@@ -6231,7 +6058,7 @@ var author$project$Main$update = F2(
 					var strVal = _n1.a;
 					return _Utils_Tuple2(
 						model,
-						A4(author$project$Main$updateCmd, model.username, row, col, strVal));
+						A3(author$project$Main$updateCmd, row, col, strVal));
 				} else {
 					return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 				}
@@ -6276,36 +6103,28 @@ var author$project$Main$update = F2(
 				while (true) {
 					switch (_n3.a.$) {
 						case 'NewState':
-							if (_n3.b.$ === 'Loading') {
-								var board = _n3.a.a;
-								var _n4 = _n3.b;
-								return _Utils_Tuple2(
-									_Utils_update(
-										model,
-										{
-											page: author$project$Main$Game(board)
-										}),
-									elm$core$Platform$Cmd$none);
-							} else {
-								break _n3$6;
-							}
-						case 'NewUpdate':
-							if (_n3.b.$ === 'Game') {
-								var _n5 = _n3.a;
-								var row = _n5.a;
-								var col = _n5.b;
-								var newVal = _n5.c;
-								var board = _n3.b.a;
-								return _Utils_Tuple2(
-									_Utils_update(
-										model,
-										{
-											page: author$project$Main$Game(
-												A4(author$project$Main$updateBoard, row, col, newVal, board))
-										}),
-									elm$core$Platform$Cmd$none);
-							} else {
-								break _n3$6;
+							switch (_n3.b.$) {
+								case 'Loading':
+									var board = _n3.a.a;
+									var _n4 = _n3.b;
+									return _Utils_Tuple2(
+										_Utils_update(
+											model,
+											{
+												page: author$project$Main$Game(board)
+											}),
+										elm$core$Platform$Cmd$none);
+								case 'Game':
+									var board = _n3.a.a;
+									return _Utils_Tuple2(
+										_Utils_update(
+											model,
+											{
+												page: author$project$Main$Game(board)
+											}),
+										elm$core$Platform$Cmd$none);
+								default:
+									break _n3$6;
 							}
 						case 'EndOfGame':
 							if (_n3.b.$ === 'Game') {
@@ -6332,7 +6151,7 @@ var author$project$Main$update = F2(
 								elm$core$Platform$Cmd$none);
 						case 'ConnectionLost':
 							if (_n3.b.$ === 'Game') {
-								var _n6 = _n3.a;
+								var _n5 = _n3.a;
 								return _Utils_Tuple2(
 									_Utils_update(
 										model,
@@ -6346,7 +6165,7 @@ var author$project$Main$update = F2(
 						default:
 							if (_n3.b.$ === 'Loading') {
 								var name = _n3.a.a;
-								var _n7 = _n3.b;
+								var _n6 = _n3.b;
 								return _Utils_Tuple2(
 									_Utils_update(
 										model,
@@ -6426,6 +6245,25 @@ var author$project$Main$UpdateCell = F3(
 		return {$: 'UpdateCell', a: a, b: b, c: c};
 	});
 var elm$core$Basics$neq = _Utils_notEqual;
+var elm$core$Maybe$map = F2(
+	function (f, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return elm$core$Maybe$Just(
+				f(value));
+		} else {
+			return elm$core$Maybe$Nothing;
+		}
+	});
+var elm$core$Maybe$withDefault = F2(
+	function (_default, maybe) {
+		if (maybe.$ === 'Just') {
+			var value = maybe.a;
+			return value;
+		} else {
+			return _default;
+		}
+	});
 var elm$html$Html$input = _VirtualDom_node('input');
 var elm$html$Html$Attributes$maxlength = function (n) {
 	return A2(
@@ -6544,7 +6382,7 @@ var author$project$Main$drawSudokuRaw = F2(
 			A2(
 				elm$core$List$indexedMap,
 				author$project$Main$drawSudokuCell(index),
-				elm$core$Array$toList(cells)));
+				cells));
 	});
 var author$project$Main$drawWinner = function (winner) {
 	if (winner.$ === 'Just') {
@@ -6696,10 +6534,7 @@ var author$project$Main$view = function (model) {
 						A2(
 						elm$html$Html$table,
 						_List_Nil,
-						A2(
-							elm$core$List$indexedMap,
-							author$project$Main$drawSudokuRaw,
-							elm$core$Array$toList(board)))
+						A2(elm$core$List$indexedMap, author$project$Main$drawSudokuRaw, board))
 					]));
 		default:
 			var leaders = _n0.a;

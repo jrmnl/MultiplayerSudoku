@@ -40,19 +40,5 @@ namespace MultiplayerSudoku.Application.Contract.Messages
 
             public string Winner { get; }
         }
-
-        public class NewUpdate : UserMessage
-        {
-            public NewUpdate(int row, int column, int value) : base("new")
-            {
-                Row = row;
-                Column = column;
-                Value = value;
-            }
-
-            public int Row { get; }
-            public int Column { get; }
-            public int Value { get; }
-        }
     }
 }

@@ -63,7 +63,7 @@ namespace MultiplayerSudoku.Application
 
             if (_board.TryUpdateAt(updation.Row, updation.Column, updation.Value))
             {
-                var updateMsg = new UserMessage.NewUpdate(updation.Row, updation.Column, updation.Value);
+                var updateMsg = new UserMessage.CurrentState(_board.CurrentState);
                 SendMessageForAll(updateMsg);
 
                 if (_board.Status != SudokuBoard.GameStatus.InProgress)
