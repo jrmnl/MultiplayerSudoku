@@ -89,8 +89,22 @@ namespace MultiplayerSudoku.Application
         {
             if (_participants.ContainsKey(subscriber.PeerId))
             {
-                var conflictMsg = new UserMessage.NameConflict(subscriber.Username);
-                subscriber.Notifyer.Post(conflictMsg);
+                var peer = _participants[subscriber.PeerId];
+                if (_participants[subscriber.PeerId].Name != subscriber.Username)
+                {
+                    var nameReserved = _participants.Values
+                        .Select(x => x.Name)
+                        .Contains(subscriber.Username);
+                    if(nameReserved)
+                    {
+                        var conflictMsg = new UserMessage.NameConflict(subscriber.Username);
+                        subscriber.Notifyer.Post(conflictMsg);
+                    }
+                    else
+                    {
+                        peer.Name = subscriber.Username;
+                    }
+                }
             }
             else
             {
