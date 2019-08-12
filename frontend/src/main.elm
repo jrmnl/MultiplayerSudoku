@@ -1,11 +1,15 @@
+module Main exposing (main)
+
+import WebSocket
 import Browser
-import List
-import Array exposing (..)
-import Html exposing (..)
+import Array exposing (Array)
+import Html exposing (Html, div, input, text, button, table, tr, td)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onInput, onClick)
 import Http
-import Json.Decode exposing (Decoder, keyValuePairs, int)
+import Json.Decode as Decode exposing (Decoder) 
+import Json.Encode as Encode
+
 
 -- MAIN
 
@@ -45,10 +49,17 @@ init _ =
 -- UPDATE
 
 
+type GameUpdate
+  = NewState Board
+  | NewUpdate Int Int Int
+  | WrongUpdate Int Int Int
+  | EndOfGame (Maybe String)
+  | Error String
 
 type Msg
   = ChangeName String
   | StartGame
+  | GameUpdate GameUpdate
   | UpdateCell Int Int String
   | ViewLeaderboard
   | GotLeaderboard (Result Http.Error (List (String, Int)))
@@ -58,19 +69,15 @@ update msg model =
     ChangeName newName ->
       ( { username = newName, page = SelectName } , Cmd.none)
 
-    UpdateCell rowIndex columnIndex newValue ->
-      case model.page of
-        Game board ->
-          ( { model | page = board |> updateBoard rowIndex columnIndex newValue |> Game }
-          , Cmd.none
-          )
-        _ ->
+    UpdateCell row col val ->
+      case String.toInt val of
+        Just strVal ->
+          (model, sendNewUpdate model.username row col strVal)
+        Nothing ->
           (model, Cmd.none)
 
     StartGame ->
-      ( { model | page = initGame |> Game }
-      , Cmd.none
-      )
+      ( { model | page = initGame |> Game }, Cmd.none)
     
     ViewLeaderboard ->
       ({ model | page = Loading } , getLeaderboard)
@@ -81,6 +88,8 @@ update msg model =
           ( { model | page = Leaderboard leaders }, Cmd.none)
         Err httpError ->
           ( { model | page = httpError |> toErrorString |> ErrorPage } , Cmd.none)
+
+    GameUpdate _ -> (model, Cmd.none)
   
 updateBoard rowIndex columnIndex newValue board =
   board
@@ -112,17 +121,28 @@ toErrorString httpError =
     Http.BadStatus code -> "Status code: " ++ String.fromInt code
     Http.BadBody str -> "Bad Body: " ++ str
 
+-- COMMANDS
+
+sendNewUpdate username row col val =
+  encodeUpdate username row col val
+  |> Encode.encode 0
+  |> WebSocket.send 
+
 
 -- SUBSCRIPTIONS
 
+gameUpdate str =
+  str
+  |> Decode.decodeString gameUpdateDecoder
+  |> Result.mapError Decode.errorToString
+  |> Result.withDefault (Error "smth broken")
+  |> GameUpdate
 
+subscriptions : Model -> Sub Msg
 subscriptions model =
-  Sub.none
-
+  WebSocket.recieve gameUpdate
 
 -- VIEW
-
-
 
 view model =
   case model.page of
@@ -170,7 +190,7 @@ drawCellContent rowIndex colIndex field =
     , onInput (UpdateCell rowIndex colIndex)
     , maxlength 1
     , size 1
-    , value (field |> Maybe.map String.fromInt |> Maybe.withDefault "")
+    , Html.Attributes.value (field |> Maybe.map String.fromInt |> Maybe.withDefault "")
     , readonly (field /= Nothing)
     ]
     []
@@ -178,7 +198,7 @@ drawCellContent rowIndex colIndex field =
 viewGreetings username =
   div []
     [ div [] [ text "Enter your name to join game:" ]
-    , input [ placeholder "Your name", value username, onInput ChangeName ] []
+    , input [ placeholder "Your name", Html.Attributes.value username, onInput ChangeName ] []
     , button [ hidden (username == ""), onClick StartGame ] [ text "Join game" ]
     , button [ onClick ViewLeaderboard ] [ text "Leaderboard" ]
     ]
@@ -194,6 +214,44 @@ getLeaderboard =
     , expect = Http.expectJson GotLeaderboard leaderboardDecoder
     }
 
+
+-- JSON ENCODE
+
+encodeUpdate username row col val =
+  Encode.object
+    [ ( "username", Encode.string username )
+    , ( "row", Encode.int row )
+    , ( "column", Encode.int col)
+    , ( "value", Encode.int val)
+    ]
+
+-- JSON DECODE
+
 leaderboardDecoder : Decoder (List (String, Int))
 leaderboardDecoder =
-  keyValuePairs int
+  Decode.keyValuePairs Decode.int
+
+gameUpdateDecoder : Decoder GameUpdate
+gameUpdateDecoder =
+  Decode.field "type" Decode.string
+  |> Decode.andThen (\str ->
+    case str of
+      "state" ->
+        Decode.map NewState
+          (Decode.field "sudokuBoard" (Decode.array (Decode.array (Decode.maybe Decode.int))))
+      "new" ->
+        Decode.map3 NewUpdate
+          (Decode.field "row" Decode.int)
+          (Decode.field "column" Decode.int)
+          (Decode.field "value" Decode.int)
+      "wrong" ->
+        Decode.map3 WrongUpdate
+          (Decode.field "row" Decode.int)
+          (Decode.field "column" Decode.int)
+          (Decode.field "value" Decode.int)
+      "end" -> 
+        Decode.map EndOfGame
+          (Decode.field "winner" (Decode.maybe Decode.string))
+      _ ->
+        Decode.map Error Decode.string
+  )

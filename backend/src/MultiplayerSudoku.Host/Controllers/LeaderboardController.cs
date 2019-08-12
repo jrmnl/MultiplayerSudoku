@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MultiplayerSudoku.Host.Controllers
@@ -7,18 +8,17 @@ namespace MultiplayerSudoku.Host.Controllers
     [ApiController]
     public class LeaderboardController : ControllerBase
     {
-        // GET api/values
+        private readonly Leaderboard _leaderboard;
+
+        public LeaderboardController(Leaderboard leaderboard)
+        {
+            _leaderboard = leaderboard ?? throw new ArgumentNullException(nameof(leaderboard));
+        }
+
         [HttpGet]
         public ActionResult<Dictionary<string, int>> Get()
         {
-            // TODO
-            return new Dictionary<string, int>
-            {
-                { "Vasya", 123 },
-                { "Qwerty", 54545 },
-                { "Qwertyaaa", 54 },
-                { "Qwertyaaav", 54 }
-            };
+            return _leaderboard.GetWins();
         }
     }
 }

@@ -6,6 +6,13 @@ namespace MultiplayerSudoku.Logic
 {
     internal static class Extensions
     {
+        public static IEnumerable<T> OfNotNullable<T>(this IEnumerable<T?> sequence) where T : struct
+        {
+            return sequence
+                .Where(x => x.HasValue)
+                .Select(x => x.Value);
+        }
+
         public static IEnumerable<T> GetRow<T>(this T[,] matrix, int rowIndex)
         {
             return Enumerable
@@ -18,6 +25,19 @@ namespace MultiplayerSudoku.Logic
             return Enumerable
                 .Range(0, matrix.GetLength(0))
                 .Select(x => matrix[x, colIndex]);
+        }
+
+        public static T[,] Copy<T>(this T[,] matrix)
+        {
+            var copy = new T[matrix.GetLength(0), matrix.GetLength(1)];
+            for (int row = 0; row < matrix.GetLength(0); row++)
+            {
+                for (int col = 0; col < matrix.GetLength(1); col++)
+                {
+                    copy[row, col] = matrix[row,col];
+                }
+            }
+            return copy;
         }
 
         public static bool TryToNotNullable<T>(this Nullable<T>[,] matrix, out T[,] result) where T : struct

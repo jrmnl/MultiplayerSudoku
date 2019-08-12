@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MultiplayerSudoku.Host.Controllers;
 
 namespace MultiplayerSudoku.Host
 {
@@ -25,6 +26,9 @@ namespace MultiplayerSudoku.Host
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+
+            services.AddSingleton<GameAgent>();
+            services.AddSingleton<Leaderboard>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -34,6 +38,10 @@ namespace MultiplayerSudoku.Host
             {
                 app.UseDeveloperExceptionPage();
             }
+
+            app.UseDefaultFiles();
+            app.UseStaticFiles();
+            app.UseFileServer(enableDirectoryBrowsing: true);
 
             app.UseCors(builder => builder.AllowAnyOrigin());
             app.UseMvc();
