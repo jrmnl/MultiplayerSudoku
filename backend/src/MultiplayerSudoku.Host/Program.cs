@@ -21,6 +21,7 @@ namespace MultiplayerSudoku.Host
         public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
             new WebHostBuilder()
                 .UseKestrel()
+                .UseUrls("http://localhost:8001") //TODO: add config
                 .UseContentRoot(Directory.GetCurrentDirectory())
                 .UseStartup<Startup>();
     }
