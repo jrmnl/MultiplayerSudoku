@@ -14,8 +14,8 @@ RUN dotnet restore
 COPY src/. ./
 RUN dotnet build "MultiplayerSudoku.Host/MultiplayerSudoku.Host.csproj" -c Release -o /app
 
-#FROM build AS test
-#RUN dotnet test "MultiplayerSudoku.Logic.Tests/MultiplayerSudoku.Logic.Tests" -c Release
+FROM build AS test
+RUN dotnet test "MultiplayerSudoku.Logic.Tests/MultiplayerSudoku.Logic.Tests.csproj" -c Release
 
 FROM build AS publish
 RUN dotnet publish "MultiplayerSudoku.Host/MultiplayerSudoku.Host.csproj" -c Release -o /app
